@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contas a Receber e a Pagar</title>
+<style>
+  :root {
+    --verde:#16a34a;--verde-claro:#dcfce7;--verde-hover:#15803d;
+    --vermelho:#dc2626;--vermelho-claro:#fee2e2;--vermelho-hover:#b91c1c;
+    --amarelo:#d97706;--amarelo-claro:#fef3c7;
+    --azul:#2563eb;--azul-claro:#dbeafe;
+    --roxo:#7c3aed;--roxo-claro:#ede9fe;
+    --laranja:#ea580c;--laranja-claro:#ffedd5;
+    --cinza:#6b7280;--cinza-claro:#f3f4f6;
+    --borda:#e5e7eb;--bg:#f9fafb;--branco:#ffffff;
+    --texto:#111827;--texto-sec:#6b7280;
+    --sombra:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+    --sombra-md:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--texto);min-height:100vh}
+
+  header{background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sombra-md)}
+  header h1{font-size:1.3rem;font-weight:700;display:flex;align-items:center;gap:10px}
+  .header-mes{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border-radius:8px;padding:6px 12px}
+  .header-mes button{background:none;border:none;color:#fff;cursor:pointer;font-size:1.2rem;padding:0 4px}
+  .header-mes span{font-size:.95rem;font-weight:600;min-width:110px;text-align:center}
+
+  .tabs{display:flex;background:var(--branco);border-bottom:2px solid var(--borda);padding:0 24px;overflow-x:auto}
+  .tab-btn{padding:14px 18px;cursor:pointer;border:none;background:none;font-size:.88rem;font-weight:600;color:var(--cinza);border-bottom:3px solid transparent;margin-bottom:-2px;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:color .2s}
+  .tab-btn.active{color:var(--azul);border-bottom-color:var(--azul)}
+  .tab-btn:hover:not(.active){color:var(--texto)}
+
+  .resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;padding:20px 24px 10px}
+  .card-resumo{background:var(--branco);border-radius:12px;padding:16px 18px;box-shadow:var(--sombra);border-left:4px solid}
+  .card-resumo.verde{border-color:var(--verde)}.card-resumo.vermelho{border-color:var(--vermelho)}
+  .card-resumo.azul{border-color:var(--azul)}.card-resumo.amarelo{border-color:var(--amarelo)}
+  .card-resumo.laranja{border-color:var(--laranja)}
+  .card-resumo .label{font-size:.75rem;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+  .card-resumo .valor{font-size:1.3rem;font-weight:700}
+  .card-resumo.verde .valor{color:var(--verde)}.card-resumo.vermelho .valor{color:var(--vermelho)}
+  .card-resumo.azul .valor{color:var(--azul)}.card-resumo.amarelo .valor{color:var(--amarelo)}
+  .card-resumo.laranja .valor{color:var(--laranja)}
+  .card-resumo .sub{font-size:.75rem;color:var(--texto-sec);margin-top:3px}
+
+  .container{padding:10px 24px 80px}
+
+  .alerta-saldo{background:var(--amarelo-claro);border:1.5px solid var(--amarelo);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-size:.875rem}
+  .alerta-saldo strong{color:var(--amarelo)}
+
+  .barra-acoes{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+  .barra-esq{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-size:.875rem;font-weight:600;display:flex;align-items:center;gap:7px;transition:all .15s}
+  .btn-primary{background:var(--azul);color:#fff}.btn-primary:hover{background:#1d4ed8}
+  .btn-verde{background:var(--verde);color:#fff}.btn-verde:hover{background:var(--verde-hover)}
+  .btn-laranja{background:var(--laranja);color:#fff}.btn-laranja:hover{background:#c2410c}
+  .btn-outline{background:#fff;color:var(--texto);border:1.5px solid var(--borda)}.btn-outline:hover{background:var(--cinza-claro)}
+  .btn-sm{padding:5px 10px;font-size:.78rem;border-radius:6px}
+  select.filtro{padding:8px 12px;border-radius:8px;border:1.5px solid var(--borda);font-size:.875rem;background:#fff;color:var(--texto);cursor:pointer}
+
+  /* TABELA NORMAL */
+  .tabela-wrap{background:var(--branco);border-radius:12px;box-shadow:var(--sombra);overflow:hidden}
+  table{width:100%;border-collapse:collapse}
+  thead{background:var(--cinza-claro)}
+  th{padding:11px 14px;text-align:left;font-size:.78rem;font-weight:700;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.04em}
+  td{padding:11px 14px;border-top:1px solid var(--borda);font-size:.875rem;vertical-align:middle}
+  tr:hover td{background:#f8faff}
+  .sem-dados{text-align:center;padding:48px 24px;color:var(--texto-sec)}
+  .sem-dados .icon{font-size:2.5rem;margin-bottom:10px}
+
+  /* SUBGRUPOS */
+  .grupo-wrap{background:var(--branco);border-radius:12px;box-shadow:var(--sombra);overflow:hidden;margin-bottom:12px}
+  .grupo-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;background:linear-gradient(135deg,#f0f4ff,#e8f0ff);border-bottom:1px solid var(--borda);user-select:none;transition:background .15s}
+  .grupo-header:hover{background:linear-gradient(135deg,#e0eaff,#d6e4ff)}
+  .grupo-header-esq{display:flex;align-items:center;gap:12px}
+  .grupo-avatar{width:40px;height:40px;border-radius:50%;background:var(--azul);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;flex-shrink:0}
+  .grupo-nome{font-weight:700;font-size:1rem;color:var(--texto)}
+  .grupo-meta{font-size:.78rem;color:var(--texto-sec);margin-top:2px}
+  .grupo-header-dir{display:flex;align-items:center;gap:14px}
+  .grupo-total{text-align:right}
+  .grupo-total .label{font-size:.72rem;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.04em}
+  .grupo-total .val{font-size:1.1rem;font-weight:700}
+  .grupo-total.pagar .val{color:var(--vermelho)}.grupo-total.receber .val{color:var(--verde)}.grupo-total.misto .val{color:var(--azul)}
+  .grupo-chevron{font-size:1.1rem;color:var(--cinza);transition:transform .25s}
+  .grupo-chevron.aberto{transform:rotate(180deg)}
+  .grupo-itens{display:none}
+  .grupo-itens.aberto{display:block}
+  .grupo-item{display:flex;align-items:center;gap:0;border-top:1px solid var(--borda);padding:10px 18px;transition:background .1s}
+  .grupo-item:hover{background:var(--cinza-claro)}
+  .grupo-item td{padding:10px 14px;border:none}
+  .grupo-item-desc{flex:1;min-width:0}
+  .grupo-item-desc .nome{font-weight:600;font-size:.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .grupo-item-desc .sub{font-size:.72rem;color:var(--texto-sec);margin-top:2px}
+  .grupo-item-val{font-weight:700;font-size:.9rem;min-width:90px;text-align:right}
+  .grupo-item-status{min-width:100px;text-align:center}
+  .grupo-item-acoes{display:flex;gap:5px;min-width:90px;justify-content:flex-end}
+  .grupo-footer{background:var(--cinza-claro);padding:10px 18px;display:flex;gap:14px;align-items:center;border-top:1px solid var(--borda);flex-wrap:wrap}
+  .grupo-footer span{font-size:.8rem;font-weight:600}
+  .grupo-footer .btn-add{margin-left:auto}
+
+  /* BADGES */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:.75rem;font-weight:600}
+  .badge-pago{background:var(--verde-claro);color:var(--verde)}
+  .badge-pendente{background:var(--amarelo-claro);color:var(--amarelo)}
+  .badge-vencido{background:var(--vermelho-claro);color:var(--vermelho)}
+  .badge-anterior{background:#e0e7ff;color:#3730a3}
+  .badge-parcela{background:var(--roxo-claro);color:var(--roxo)}
+  .badge-grupo{background:var(--laranja-claro);color:var(--laranja)}
+
+  .tipo-pagar{color:var(--vermelho);font-weight:600}.tipo-receber{color:var(--verde);font-weight:600}
+  .acoes{display:flex;gap:6px}
+
+  /* MODAIS */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+  .modal{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto}
+  .modal h2{font-size:1.1rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .form-group{margin-bottom:14px}
+  .form-group label{display:block;font-size:.8rem;font-weight:600;color:var(--texto-sec);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
+  .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1.5px solid var(--borda);border-radius:8px;font-size:.9rem;color:var(--texto);transition:border-color .15s}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--azul)}
+  .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+  .divisor{border:none;border-top:1.5px solid var(--borda);margin:16px 0}
+
+  /* SUBGRUPO CAIXA */
+  .grupo-box{background:var(--laranja-claro);border:1.5px solid #fdba74;border-radius:10px;padding:14px;margin-bottom:14px}
+  .grupo-box .titulo{font-size:.8rem;font-weight:700;color:var(--laranja);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .toggle-sg{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .toggle-sg label{font-size:.875rem;font-weight:600;color:var(--texto);cursor:pointer;display:flex;align-items:center;gap:8px}
+  .switch{position:relative;display:inline-block;width:40px;height:22px}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;cursor:pointer;inset:0;background:#d1d5db;border-radius:22px;transition:.2s}
+  .slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+  input:checked+.slider{background:var(--laranja)}
+  input:checked+.slider:before{transform:translateX(18px)}
+
+  /* PARCELAS */
+  .parcelas-box{background:var(--roxo-claro);border:1.5px solid #c4b5fd;border-radius:10px;padding:14px;margin-bottom:14px}
+  .parcelas-box .titulo{font-size:.8rem;font-weight:700;color:var(--roxo);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .toggle-parcelas{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .toggle-parcelas label{font-size:.875rem;font-weight:600;color:var(--texto);cursor:pointer;display:flex;align-items:center;gap:8px}
+  input[id^="chk-"]+.slider{background:#d1d5db}
+  input[id^="chk-"]:checked+.slider{background:var(--roxo)}
+  .preview-parcelas .parcela-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#fff;border-radius:7px;margin-bottom:5px;font-size:.82rem;border:1px solid #c4b5fd}
+  .parcela-item .num{font-weight:700;color:var(--roxo);min-width:50px}
+  .parcela-item .mes-ref{color:var(--texto-sec)}
+  .parcela-item .val{font-weight:700;color:var(--texto)}
+
+  .toggle-tipo{display:flex;border:1.5px solid var(--borda);border-radius:8px;overflow:hidden;margin-bottom:14px}
+  .toggle-tipo button{flex:1;padding:10px;border:none;cursor:pointer;font-size:.875rem;font-weight:600;background:#fff;color:var(--cinza);transition:all .15s}
+  .toggle-tipo button.pagar.active{background:var(--vermelho-claro);color:var(--vermelho)}
+  .toggle-tipo button.receber.active{background:var(--verde-claro);color:var(--verde)}
+
+  .info-conta{background:var(--cinza-claro);border-radius:10px;padding:14px;margin-bottom:16px;font-size:.875rem}
+  .info-conta .row{display:flex;justify-content:space-between;margin-bottom:6px}
+  .info-conta .row:last-child{margin-bottom:0}
+  .info-conta .row span:first-child{color:var(--texto-sec)}
+
+  .totais-footer{background:var(--cinza-claro);border-top:1px solid var(--borda);padding:12px 14px;display:flex;gap:20px;flex-wrap:wrap;font-size:.8rem;font-weight:600}
+
+  /* LISTA GRUPOS GERENCIAR */
+  .grupo-manage-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--borda);border-radius:8px;margin-bottom:7px;background:var(--cinza-claro)}
+  .grupo-manage-item .ava{width:32px;height:32px;border-radius:50%;background:var(--laranja);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700}
+
+  .hidden{display:none!important}
+  @media(max-width:640px){
+    .resumo{grid-template-columns:1fr 1fr;padding:14px}
+    .container{padding:10px 14px 80px}
+    header{padding:12px 14px}
+    header h1{font-size:1rem}
+    .form-row,.form-row-3{grid-template-columns:1fr}
+    .grupo-item-status{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>💰</span> Contas a Receber e a Pagar</h1>
+  <div class="header-mes">
+    <button onclick="mudarMes(-1)">‹</button>
+    <span id="mes-atual-label"></span>
+    <button onclick="mudarMes(1)">›</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="todas" onclick="mudarTab('todas')">📋 Todas</button>
+  <button class="tab-btn" data-tab="pagar" onclick="mudarTab('pagar')">🔴 A Pagar</button>
+  <button class="tab-btn" data-tab="receber" onclick="mudarTab('receber')">🟢 A Receber</button>
+  <button class="tab-btn" data-tab="subgrupos" onclick="mudarTab('subgrupos')">👥 Subgrupos</button>
+</div>
+
+<div class="resumo" id="resumo-cards"></div>
+
+<div class="container">
+  <div class="alerta-saldo hidden" id="alerta-saldo">
+    <span>⚠️</span><div id="alerta-saldo-texto"></div>
+  </div>
+
+  <div class="barra-acoes">
+    <div class="barra-esq">
+      <button class="btn btn-primary" onclick="abrirModal()">＋ Nova Conta</button>
+      <button class="btn btn-laranja" onclick="abrirModalGrupos()">👥 Subgrupos</button>
+      <button class="btn btn-outline" onclick="abrirModalCategorias()">🏷 Categorias</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap" id="barra-filtros">
+      <select class="filtro" id="filtro-status" onchange="renderTabela()">
+        <option value="">Todos os status</option>
+        <option value="pendente">Pendentes</option>
+        <option value="pago">Pagos/Recebidos</option>
+        <option value="vencido">Vencidos</option>
+        <option value="anterior">Mês anterior</option>
+        <option value="parcela">Parceladas</option>
+        <option value="grupo">Com subgrupo</option>
+      </select>
+      <select class="filtro" id="filtro-categoria" onchange="renderTabela()">
+        <option value="">Todas as categorias</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- VIEW NORMAL -->
+  <div id="view-normal">
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Descrição</th><th>Tipo</th><th>Valor</th><th>Vencimento</th>
+            <th>Categoria</th><th>Status</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="sem-dados" class="sem-dados hidden"><div class="icon">📂</div><div>Nenhuma conta encontrada</div></div>
+      <div class="totais-footer" id="totais-footer"></div>
+    </div>
+  </div>
+
+  <!-- VIEW SUBGRUPOS -->
+  <div id="view-subgrupos" class="hidden">
+    <div id="grupos-container"></div>
+    <div id="sem-grupos" class="sem-dados hidden"><div class="icon">👥</div><div>Nenhum subgrupo encontrado neste mês</div></div>
+  </div>
+</div>
+
+<!-- ===== MODAL NOVA CONTA ===== -->
+<div class="overlay hidden" id="modal-overlay" onclick="fecharModalFora(event)">
+  <div class="modal">
+    <h2 id="modal-titulo">💳 Nova Conta</h2>
+    <div class="toggle-tipo">
+      <button class="pagar active" id="btn-tp" onclick="setTipo('pagar')">🔴 A Pagar</button>
+      <button class="receber" id="btn-tr" onclick="setTipo('receber')">🟢 A Receber</button>
+    </div>
+    <div class="form-group">
+      <label>Descrição *</label>
+      <input type="text" id="f-desc" placeholder="Ex: Conta de luz, Aluguel..." oninput="primeiraLetra(this)">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Valor Total (R$) *</label>
+        <input type="text" id="f-valor" placeholder="0,00" oninput="mascaraMoeda(this);atualizarPreviewParcelas()" onkeydown="permitirSoNumeros(event)">
+      </div>
+      <div class="form-group">
+        <label>Referência (Mês/Ano)</label>
+        <input type="month" id="f-ref" onchange="atualizarPreviewParcelas()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Vencimento *</label>
+        <input type="date" id="f-venc">
+      </div>
+      <div class="form-group">
+        <label>Categoria</label>
+        <select id="f-cat"></select>
+      </div>
+    </div>
+
+    <!-- SUBGRUPO -->
+    <div class="toggle-sg">
+      <label>
+        <span class="switch"><input type="checkbox" id="chk-sg" onchange="toggleSG()"><span class="slider"></span></span>
+        👥 Vincular a um Subgrupo
+      </label>
+    </div>
+    <div class="grupo-box hidden" id="sg-box">
+      <div class="titulo">👥 Subgrupo</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Subgrupo *</label>
+          <select id="f-sg">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Ou crie novo</label>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="f-sg-novo" placeholder="Nome..." oninput="primeiraLetra(this)" style="flex:1">
+            <button class="btn btn-laranja btn-sm" type="button" onclick="criarSGRapido()" style="white-space:nowrap">+ Criar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARCELAS -->
+    <div class="toggle-parcelas">
+      <label>
+        <span class="switch"><input type="checkbox" id="chk-parc" onchange="toggleParcelas()"><span class="slider" style="background:#d1d5db"></span></span>
+        🔢 Parcelar
+      </label>
+    </div>
+    <div class="parcelas-box hidden" id="parcelas-box">
+      <div class="titulo">📦 Configuração de Parcelas</div>
+      <div class="form-row-3">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Nº de Parcelas</label>
+          <select id="f-nparc" onchange="atualizarPreviewParcelas()">
+            <option value="2">2x</option><option value="3">3x</option><option value="4">4x</option>
+            <option value="5">5x</option><option value="6">6x</option><option value="7">7x</option>
+            <option value="8">8x</option><option value="9">9x</option><option value="10">10x</option>
+            <option value="11">11x</option><option value="12">12x</option><option value="18">18x</option>
+            <option value="24">24x</option><option value="36">36x</option><option value="48">48x</option>
+            <option value="60">60x</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Dia de vencimento</label>
+          <input type="number" id="f-diaparc" min="1" max="31" value="10" onchange="atualizarPreviewParcelas()">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Valor parcela</label>
+          <input type="text" id="f-vparc" readonly style="background:var(--cinza-claro);font-weight:700">
+        </div>
+      </div>
+      <div class="preview-parcelas" id="prev-parc" style="margin-top:10px"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Observação</label>
+      <textarea id="f-obs" rows="2" placeholder="Observações..." oninput="primeiraLetra(this)"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarConta()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL BAIXA ===== -->
+<div class="overlay hidden" id="modal-baixa" onclick="if(event.target.id==='modal-baixa')fecharBaixa()">
+  <div class="modal">
+    <h2 id="baixa-titulo">✅ Dar Baixa</h2>
+    <div class="info-conta" id="baixa-info"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data do Pagamento</label>
+        <input type="date" id="baixa-data">
+      </div>
+      <div class="form-group">
+        <label>Valor Pago (R$)</label>
+        <input type="text" id="baixa-valor" oninput="mascaraMoeda(this)" onkeydown="permitirSoNumeros(event)">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Observação</label>
+      <input type="text" id="baixa-obs" placeholder="Opcional..." oninput="primeiraLetra(this)">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="fecharBaixa()">Cancelar</button>
+      <button class="btn btn-verde" onclick="confirmarBaixa()">✅ Confirmar Baixa</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL SUBGRUPOS ===== -->
+<div class="overlay hidden" id="modal-grupos" onclick="if(event.target.id==='modal-grupos')fecharGrupos()">
+  <div class="modal">
+    <h2>👥 Gerenciar Subgrupos</h2>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input type="text" id="novo-sg" placeholder="Nome do subgrupo (ex: Jamile)..." style="flex:1;padding:10px;border:1.5px solid var(--borda);border-radius:8px;font-size:.9rem" oninput="primeiraLetra(this)" onkeydown="if(event.key==='Enter')addSG()">
+      <button class="btn btn-laranja" onclick="addSG()">Adicionar</button>
+    </div>
+    <div id="lista-sgs"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="fecharGrupos()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL CATEGORIAS ===== -->
+<div class="overlay hidden" id="modal-cats" onclick="if(event.target.id==='modal-cats')fecharCats()">
+  <div class="modal">
+    <h2>🏷 Gerenciar Categorias</h2>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input type="text" id="nova-cat" placeholder="Nome da categoria..." style="flex:1;padding:10px;border:1.5px solid var(--borda);border-radius:8px;font-size:.9rem" oninput="primeiraLetra(this)" onkeydown="if(event.key==='Enter')addCat()">
+      <button class="btn btn-primary" onclick="addCat()">Adicionar</button>
+    </div>
+    <div id="lista-cats"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="fecharCats()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== ESTADO =====
+let contas=[], categorias=[], subgrupos=[];
+let mesAtual=new Date().getMonth(), anoAtual=new Date().getFullYear();
+let tabAtual='todas', editandoId=null, baixandoId=null, tipoModal='pagar';
+let gruposAbertos={};
+
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MESES_ABREV=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+// ===== STORAGE =====
+function save(){try{localStorage.setItem('crp_c',JSON.stringify(contas));localStorage.setItem('crp_cat',JSON.stringify(categorias));localStorage.setItem('crp_sg',JSON.stringify(subgrupos));}catch(e){}}
+function load(){
+  try{
+    const c=localStorage.getItem('crp_c'),cat=localStorage.getItem('crp_cat'),sg=localStorage.getItem('crp_sg');
+    if(c)contas=JSON.parse(c);if(cat)categorias=JSON.parse(cat);if(sg)subgrupos=JSON.parse(sg);
+  }catch(e){}
+  if(!categorias.length)categorias=['Aluguel','Energia','Água','Internet','Alimentação','Saúde','Transporte','Salário','Serviços','Outros'];
+  save();
+}
+
+// ===== UTILS =====
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function fmt(v){return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function parseMoeda(s){return parseFloat((s||'0').replace(/\./g,'').replace(',','.'))||0}
+function hoje(){return new Date().toISOString().slice(0,10)}
+function refMes(a,m){return `${a}-${String(m+1).padStart(2,'0')}`}
+function labelMes(a,m){return `${MESES[m]} ${a}`}
+function refLabel(r){if(!r)return '';const[a,m]=r.split('-');return `${MESES_ABREV[parseInt(m)-1]}/${a}`}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function iniciais(nome){return nome.trim().split(/\s+/).slice(0,2).map(p=>p[0].toUpperCase()).join('')}
+function mascaraMoeda(el){let v=el.value.replace(/\D/g,'');if(!v){el.value='';return;}el.value=(parseInt(v)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function permitirSoNumeros(e){if(!['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'].includes(e.key)&&!/^\d$/.test(e.key))e.preventDefault()}
+function primeiraLetra(el){if(el.value.length===1)el.value=el.value.toUpperCase()}
+function getStatus(c){if(c.pago)return 'pago';if(c.vencimento<hoje())return 'vencido';return 'pendente'}
+function badgeStatus(c,isAnt){
+  if(isAnt)return '<span class="badge badge-anterior">↩ Mês ant.</span>';
+  const s=getStatus(c);
+  if(s==='pago')return `<span class="badge badge-pago">✓ ${c.tipo==='receber'?'Recebido':'Pago'}</span>`;
+  if(s==='vencido')return '<span class="badge badge-vencido">⚠ Vencido</span>';
+  return '<span class="badge badge-pendente">⏳ Pendente</span>';
+}
+
+// ===== PARCELAS =====
+function avancarMes(ref,n){let[a,m]=ref.split('-').map(Number);m=m-1+n;a+=Math.floor(m/12);m=m%12;return refMes(a,m)}
+function gerarDataVenc(a,m,dia){const ult=new Date(a,m+1,0).getDate();const d=Math.min(dia,ult);return `${a}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+
+// ===== MÊS =====
+function mudarMes(d){mesAtual+=d;if(mesAtual<0){mesAtual=11;anoAtual--;}if(mesAtual>11){mesAtual=0;anoAtual++;}renderTudo()}
+
+// ===== FILTRAR =====
+function getContasMes(){
+  const ref=refMes(anoAtual,mesAtual);
+  return contas.filter(c=>c.referencia===ref||(!c.pago&&c.referencia<ref)).map(c=>({...c,anterior:c.referencia<ref&&!c.pago}));
+}
+function getContasFiltradas(){
+  let lista=getContasMes();
+  if(tabAtual!=='todas'&&tabAtual!=='subgrupos')lista=lista.filter(c=>c.tipo===tabAtual);
+  const fS=document.getElementById('filtro-status')?.value||'';
+  const fC=document.getElementById('filtro-categoria')?.value||'';
+  if(fS==='anterior')lista=lista.filter(c=>c.anterior);
+  else if(fS==='parcela')lista=lista.filter(c=>c.grupoParcela);
+  else if(fS==='grupo')lista=lista.filter(c=>c.subgrupo);
+  else if(fS)lista=lista.filter(c=>!c.anterior&&getStatus(c)===fS);
+  if(fC)lista=lista.filter(c=>c.categoria===fC);
+  return lista;
+}
+
+// ===== RESUMO =====
+function renderResumo(){
+  const lista=getContasMes();
+  const pagar=lista.filter(c=>c.tipo==='pagar'),receber=lista.filter(c=>c.tipo==='receber');
+  const tP=pagar.reduce((s,c)=>s+c.valor,0),tR=receber.reduce((s,c)=>s+c.valor,0);
+  const pP=pagar.filter(c=>c.pago).reduce((s,c)=>s+c.valor,0),rR=receber.filter(c=>c.pago).reduce((s,c)=>s+c.valor,0);
+  const pend=pagar.filter(c=>!c.pago).reduce((s,c)=>s+c.valor,0);
+  const pendR=receber.filter(c=>!c.pago).reduce((s,c)=>s+c.valor,0);
+  const ant=lista.filter(c=>c.anterior).reduce((s,c)=>s+c.valor,0);
+  const saldo=tR-tP;
+  const sgNames=[...new Set(lista.filter(c=>c.subgrupo).map(c=>c.subgrupo))];
+  document.getElementById('resumo-cards').innerHTML=`
+    <div class="card-resumo verde"><div class="label">A Receber</div><div class="valor">${fmt(tR)}</div><div class="sub">${fmt(rR)} recebido • ${fmt(pendR)} pendente</div></div>
+    <div class="card-resumo vermelho"><div class="label">A Pagar</div><div class="valor">${fmt(tP)}</div><div class="sub">${fmt(pP)} pago • ${fmt(pend)} pendente</div></div>
+    <div class="card-resumo ${saldo>=0?'azul':'vermelho'}"><div class="label">Saldo do Mês</div><div class="valor">${fmt(saldo)}</div><div class="sub">${saldo>=0?'Positivo 🟢':'Negativo 🔴'}</div></div>
+    ${ant>0?`<div class="card-resumo amarelo"><div class="label">Saldo Anterior</div><div class="valor">${fmt(ant)}</div><div class="sub">Não pagos de meses ant.</div></div>`:''}
+    ${sgNames.length>0?`<div class="card-resumo laranja"><div class="label">Subgrupos</div><div class="valor">${sgNames.length}</div><div class="sub">${sgNames.slice(0,3).join(', ')}${sgNames.length>3?'...':''}</div></div>`:''}
+  `;
+}
+
+// ===== ALERTA =====
+function renderAlerta(){
+  const ant=getContasMes().filter(c=>c.anterior);
+  const el=document.getElementById('alerta-saldo');
+  if(ant.length>0){
+    document.getElementById('alerta-saldo-texto').innerHTML=`<strong>${ant.length} conta(s)</strong> de meses anteriores não liquidadas somando <strong>${fmt(ant.reduce((s,c)=>s+c.valor,0))}</strong> foram trazidas para este mês.`;
+    el.classList.remove('hidden');
+  }else el.classList.add('hidden');
+}
+
+// ===== TABELA NORMAL =====
+function renderTabela(){
+  atualizarFiltroCategoria();
+  const vSG=tabAtual==='subgrupos';
+  document.getElementById('view-normal').classList.toggle('hidden',vSG);
+  document.getElementById('view-subgrupos').classList.toggle('hidden',!vSG);
+  document.getElementById('barra-filtros').classList.toggle('hidden',vSG);
+  if(vSG){renderSubgrupos();return}
+
+  const lista=getContasFiltradas();
+  const tbody=document.getElementById('tbody'),semD=document.getElementById('sem-dados'),totEl=document.getElementById('totais-footer');
+  if(!lista.length){tbody.innerHTML='';semD.classList.remove('hidden');totEl.innerHTML='';return}
+  semD.classList.add('hidden');
+  const tP=lista.filter(c=>c.tipo==='pagar').reduce((s,c)=>s+c.valor,0);
+  const tR=lista.filter(c=>c.tipo==='receber').reduce((s,c)=>s+c.valor,0);
+  const qA=lista.filter(c=>c.anterior).length,qP=lista.filter(c=>c.grupoParcela).length,qG=lista.filter(c=>c.subgrupo).length;
+  tbody.innerHTML=lista.map(c=>{
+    const venStr=c.vencimento?new Date(c.vencimento+'T12:00').toLocaleDateString('pt-BR'):'—';
+    const s=getStatus(c);
+    const sg=c.subgrupo?subgrupos.find(x=>x.id===c.subgrupo):null;
+    return `<tr>
+      <td>
+        <div style="font-weight:600">${esc(c.descricao)}</div>
+        ${sg?`<span class="badge badge-grupo" style="margin-top:2px">👥 ${esc(sg.nome)}</span>`:''}
+        ${c.grupoParcela?`<span class="badge badge-parcela" style="margin-top:2px">📦 ${c.numParcela}/${c.totalParcelas}</span>`:''}
+        ${c.referencia&&c.referencia!==refMes(anoAtual,mesAtual)?`<div style="font-size:.72rem;color:var(--texto-sec)">Ref: ${refLabel(c.referencia)}</div>`:''}
+        ${c.obs?`<div style="font-size:.72rem;color:var(--texto-sec)">${esc(c.obs)}</div>`:''}
+      </td>
+      <td class="${c.tipo==='pagar'?'tipo-pagar':'tipo-receber'}">${c.tipo==='pagar'?'🔴 Pagar':'🟢 Receber'}</td>
+      <td style="font-weight:700">${fmt(c.valor)}${c.grupoParcela?`<div style="font-size:.72rem;color:var(--texto-sec)">Total: ${fmt(c.valorTotal)}</div>`:''}</td>
+      <td style="${s==='vencido'&&!c.pago?'color:var(--vermelho);font-weight:600':''}">${venStr}${c.anterior?'<div style="font-size:.72rem;color:#6366f1">↩ Anterior</div>':''}</td>
+      <td><span style="background:var(--cinza-claro);padding:2px 8px;border-radius:6px;font-size:.78rem">${esc(c.categoria||'—')}</span></td>
+      <td>${badgeStatus(c,c.anterior)}${c.pago&&c.dataPagamento?`<div style="font-size:.72rem;color:var(--texto-sec)">em ${new Date(c.dataPagamento+'T12:00').toLocaleDateString('pt-BR')}</div>`:''}</td>
+      <td><div class="acoes">
+        ${!c.pago?`<button class="btn btn-verde btn-sm" onclick="abrirBaixa('${c.id}')" title="Dar Baixa">✓</button>`:`<button class="btn btn-outline btn-sm" onclick="estornar('${c.id}')">↩</button>`}
+        <button class="btn btn-outline btn-sm" onclick="editarConta('${c.id}')">✏</button>
+        <button class="btn btn-outline btn-sm" style="color:var(--vermelho)" onclick="excluirConta('${c.id}')">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  totEl.innerHTML=`<span>📋 ${lista.length} conta(s)</span><span style="color:var(--vermelho)">🔴 ${fmt(tP)}</span><span style="color:var(--verde)">🟢 ${fmt(tR)}</span>${qA?`<span style="color:#6366f1">↩ ${qA} ant.</span>`:''}${qP?`<span style="color:var(--roxo)">📦 ${qP} parc.</span>`:''}${qG?`<span style="color:var(--laranja)">👥 ${qG} subgrupos</span>`:''}`;
+}
+
+// ===== VIEW SUBGRUPOS =====
+function renderSubgrupos(){
+  const ref=refMes(anoAtual,mesAtual);
+  const lista=contas.filter(c=>c.referencia===ref||(!c.pago&&c.referencia<ref)).map(c=>({...c,anterior:c.referencia<ref&&!c.pago}));
+  const comGrupo=lista.filter(c=>c.subgrupo);
+  const container=document.getElementById('grupos-container');
+  const semG=document.getElementById('sem-grupos');
+  if(!comGrupo.length){container.innerHTML='';semG.classList.remove('hidden');return}
+  semG.classList.add('hidden');
+
+  // Agrupar por subgrupo
+  const grupos={};
+  comGrupo.forEach(c=>{
+    if(!grupos[c.subgrupo])grupos[c.subgrupo]=[];
+    grupos[c.subgrupo].push(c);
+  });
+
+  container.innerHTML=Object.entries(grupos).map(([sgId,itens])=>{
+    const sg=subgrupos.find(x=>x.id===sgId);
+    if(!sg)return '';
+    const nome=sg.nome;
+    const tPagar=itens.filter(c=>c.tipo==='pagar').reduce((s,c)=>s+c.valor,0);
+    const tReceber=itens.filter(c=>c.tipo==='receber').reduce((s,c)=>s+c.valor,0);
+    const qPag=itens.filter(c=>c.pago).length;
+    const isAberto=gruposAbertos[sgId]!==false;
+    const tipoTotal=tPagar>0&&tReceber>0?'misto':tPagar>0?'pagar':'receber';
+    const totalMostra=tipoTotal==='misto'?tReceber-tPagar:(tPagar||tReceber);
+
+    const linhasItens=itens.map(c=>{
+      const venStr=c.vencimento?new Date(c.vencimento+'T12:00').toLocaleDateString('pt-BR'):'—';
+      const s=getStatus(c);
+      return `<div class="grupo-item" style="display:flex;align-items:center;gap:0">
+        <div class="grupo-item-desc" style="flex:1;padding:10px 18px">
+          <div class="nome">${esc(c.descricao)}</div>
+          <div class="sub">${venStr} ${c.anterior?'· <span style="color:#6366f1">↩ Anterior</span>':''}${c.grupoParcela?` · <span style="color:var(--roxo)">Parcela ${c.numParcela}/${c.totalParcelas}</span>`:''}${c.obs?` · ${esc(c.obs)}`:''}</div>
+        </div>
+        <div class="grupo-item-val" style="padding:10px 8px;text-align:right;min-width:90px">
+          <div style="color:${c.tipo==='pagar'?'var(--vermelho)':'var(--verde)'}">${fmt(c.valor)}</div>
+          <div style="font-size:.72rem;color:var(--texto-sec)">${c.tipo==='pagar'?'Pagar':'Receber'}</div>
+        </div>
+        <div class="grupo-item-status" style="padding:10px 8px;min-width:110px;text-align:center">
+          ${badgeStatus(c,c.anterior)}
+          ${c.pago&&c.dataPagamento?`<div style="font-size:.7rem;color:var(--texto-sec)">em ${new Date(c.dataPagamento+'T12:00').toLocaleDateString('pt-BR')}</div>`:''}
+        </div>
+        <div class="grupo-item-acoes" style="padding:10px 18px 10px 8px;display:flex;gap:5px">
+          ${!c.pago?`<button class="btn btn-verde btn-sm" onclick="abrirBaixa('${c.id}')">✓</button>`:`<button class="btn btn-outline btn-sm" onclick="estornar('${c.id}')">↩</button>`}
+          <button class="btn btn-outline btn-sm" onclick="editarConta('${c.id}')">✏</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--vermelho)" onclick="excluirConta('${c.id}')">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    const totalLabel=tipoTotal==='misto'?`Saldo: ${fmt(totalMostra)}`:tipoTotal==='pagar'?`A Pagar: ${fmt(tPagar)}`:`A Receber: ${fmt(tReceber)}`;
+
+    return `<div class="grupo-wrap">
+      <div class="grupo-header" onclick="toggleGrupo('${sgId}')">
+        <div class="grupo-header-esq">
+          <div class="grupo-avatar">${esc(iniciais(nome))}</div>
+          <div>
+            <div class="grupo-nome">${esc(nome)}</div>
+            <div class="grupo-meta">${itens.length} item(ns) · ${qPag} pago(s) · ${itens.length-qPag} pendente(s)</div>
+          </div>
+        </div>
+        <div class="grupo-header-dir">
+          ${tPagar>0?`<div class="grupo-total pagar"><div class="label">A Pagar</div><div class="val">${fmt(tPagar)}</div></div>`:''}
+          ${tReceber>0?`<div class="grupo-total receber"><div class="label">A Receber</div><div class="val">${fmt(tReceber)}</div></div>`:''}
+          <span class="grupo-chevron ${isAberto?'aberto':''}">▼</span>
+        </div>
+      </div>
+      <div class="grupo-itens ${isAberto?'aberto':''}" id="gi-${sgId}">
+        ${linhasItens}
+        <div class="grupo-footer">
+          <span>${itens.length} item(ns)</span>
+          ${tPagar>0?`<span style="color:var(--vermelho)">🔴 Pagar: ${fmt(tPagar)}</span>`:''}
+          ${tReceber>0?`<span style="color:var(--verde)">🟢 Receber: ${fmt(tReceber)}</span>`:''}
+          ${tPagar>0&&tReceber>0?`<span style="color:var(--azul)">⚖ Saldo: ${fmt(tReceber-tPagar)}</span>`:''}
+          <button class="btn btn-laranja btn-sm grupo-footer .btn-add" onclick="abrirModalComGrupo('${sgId}')">＋ Adicionar item</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleGrupo(id){
+  gruposAbertos[id]=gruposAbertos[id]===false?true:false;
+  renderSubgrupos();
+}
+
+// ===== FILTRO CATEGORIA =====
+function atualizarFiltroCategoria(){
+  const sel=document.getElementById('filtro-categoria');
+  const atual=sel.value;
+  sel.innerHTML='<option value="">Todas as categorias</option>'+categorias.map(c=>`<option value="${esc(c)}" ${atual===c?'selected':''}>${esc(c)}</option>`).join('');
+}
+
+function mudarTab(tab){
+  tabAtual=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  renderTabela();
+}
+
+// ===== MODAL CONTA =====
+function abrirModal(){
+  editandoId=null;tipoModal='pagar';
+  document.getElementById('modal-titulo').textContent='💳 Nova Conta';
+  document.getElementById('f-desc').value='';document.getElementById('f-valor').value='';
+  document.getElementById('f-venc').value=hoje();document.getElementById('f-ref').value=refMes(anoAtual,mesAtual);
+  document.getElementById('f-obs').value='';
+  document.getElementById('chk-sg').checked=false;document.getElementById('sg-box').classList.add('hidden');
+  document.getElementById('chk-parc').checked=false;document.getElementById('parcelas-box').classList.add('hidden');
+  document.getElementById('f-nparc').value='2';document.getElementById('f-diaparc').value='10';
+  document.getElementById('prev-parc').innerHTML='';document.getElementById('f-vparc').value='';
+  popularCatSelect();popularSGSelect();
+  setTipo('pagar');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function abrirModalComGrupo(sgId){
+  abrirModal();
+  document.getElementById('chk-sg').checked=true;
+  document.getElementById('sg-box').classList.remove('hidden');
+  popularSGSelect(sgId);
+}
+
+function editarConta(id){
+  const c=contas.find(x=>x.id===id);if(!c)return;
+  editandoId=id;tipoModal=c.tipo;
+  document.getElementById('modal-titulo').textContent='✏ Editar Conta';
+  document.getElementById('f-desc').value=c.descricao;
+  document.getElementById('f-valor').value=c.valor.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('f-venc').value=c.vencimento||'';
+  document.getElementById('f-ref').value=c.referencia||refMes(anoAtual,mesAtual);
+  document.getElementById('f-obs').value=c.obs||'';
+  if(c.subgrupo){document.getElementById('chk-sg').checked=true;document.getElementById('sg-box').classList.remove('hidden');popularSGSelect(c.subgrupo);}
+  else{document.getElementById('chk-sg').checked=false;document.getElementById('sg-box').classList.add('hidden');popularSGSelect();}
+  document.getElementById('chk-parc').checked=false;document.getElementById('parcelas-box').classList.add('hidden');
+  popularCatSelect(c.categoria);setTipo(c.tipo);
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function popularCatSelect(sel){
+  document.getElementById('f-cat').innerHTML='<option value="">Sem categoria</option>'+categorias.map(c=>`<option value="${esc(c)}" ${sel===c?'selected':''}>${esc(c)}</option>`).join('');
+}
+function popularSGSelect(sel){
+  document.getElementById('f-sg').innerHTML='<option value="">Selecione...</option>'+subgrupos.map(s=>`<option value="${s.id}" ${sel===s.id?'selected':''}>${esc(s.nome)}</option>`).join('');
+}
+
+function setTipo(t){
+  tipoModal=t;
+  document.getElementById('btn-tp').classList.toggle('active',t==='pagar');
+  document.getElementById('btn-tr').classList.toggle('active',t==='receber');
+}
+
+function fecharModal(){document.getElementById('modal-overlay').classList.add('hidden')}
+function fecharModalFora(e){if(e.target.id==='modal-overlay')fecharModal()}
+
+function toggleSG(){
+  const on=document.getElementById('chk-sg').checked;
+  document.getElementById('sg-box').classList.toggle('hidden',!on);
+}
+function toggleParcelas(){
+  const on=document.getElementById('chk-parc').checked;
+  document.getElementById('parcelas-box').classList.toggle('hidden',!on);
+  if(on)atualizarPreviewParcelas();
+}
+
+function criarSGRapido(){
+  const nome=document.getElementById('f-sg-novo').value.trim();
+  if(!nome)return;
+  if(subgrupos.find(s=>s.nome.toLowerCase()===nome.toLowerCase())){alert('Já existe.');return}
+  const novoId=uid();
+  subgrupos.push({id:novoId,nome,criadoEm:new Date().toISOString()});
+  document.getElementById('f-sg-novo').value='';
+  save();popularSGSelect(novoId);
+}
+
+function atualizarPreviewParcelas(){
+  if(!document.getElementById('chk-parc').checked)return;
+  const valorTotal=parseMoeda(document.getElementById('f-valor').value);
+  const nP=parseInt(document.getElementById('f-nparc').value)||2;
+  const dia=parseInt(document.getElementById('f-diaparc').value)||10;
+  const ref=document.getElementById('f-ref').value||refMes(anoAtual,mesAtual);
+  if(!valorTotal){document.getElementById('f-vparc').value='';document.getElementById('prev-parc').innerHTML='';return}
+  const vP=Math.floor((valorTotal/nP)*100)/100;
+  const vUlt=Math.round((valorTotal-vP*(nP-1))*100)/100;
+  document.getElementById('f-vparc').value=vP.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const mostrar=Math.min(nP,5);let html='';
+  for(let i=0;i<mostrar;i++){
+    const r=avancarMes(ref,i);const[a,m]=r.split('-').map(Number);
+    const dv=gerarDataVenc(a,m-1,dia);const v=i===nP-1?vUlt:vP;
+    html+=`<div class="parcela-item"><span class="num">${String(i+1).padStart(2,'0')}/${String(nP).padStart(2,'0')}</span><span class="mes-ref">${refLabel(r)} · ${new Date(dv+'T12:00').toLocaleDateString('pt-BR')}</span><span class="val">${fmt(v)}</span></div>`;
+  }
+  if(nP>5)html+=`<div style="text-align:center;font-size:.78rem;color:var(--texto-sec);padding:6px">... e mais ${nP-5} parcelas até ${refLabel(avancarMes(ref,nP-1))}</div>`;
+  document.getElementById('prev-parc').innerHTML=html;
+}
+
+function salvarConta(){
+  const desc=document.getElementById('f-desc').value.trim();
+  const valorStr=document.getElementById('f-valor').value;
+  const venc=document.getElementById('f-venc').value;
+  const ref=document.getElementById('f-ref').value||refMes(anoAtual,mesAtual);
+  const cat=document.getElementById('f-cat').value;
+  const obs=document.getElementById('f-obs').value.trim();
+  const sgAtivo=document.getElementById('chk-sg').checked;
+  const sgId=sgAtivo?document.getElementById('f-sg').value:'';
+  const isParc=document.getElementById('chk-parc').checked&&!editandoId;
+  if(!desc){alert('Informe a descrição.');return}
+  if(!valorStr){alert('Informe o valor.');return}
+  const valor=parseMoeda(valorStr);
+  if(valor<=0){alert('Valor inválido.');return}
+  if(sgAtivo&&!sgId){alert('Selecione ou crie um subgrupo.');return}
+
+  if(editandoId){
+    const idx=contas.findIndex(c=>c.id===editandoId);
+    if(idx>=0)contas[idx]={...contas[idx],descricao:desc,valor,vencimento:venc,referencia:ref,categoria:cat,obs,tipo:tipoModal,subgrupo:sgId||undefined};
+  }else if(isParc){
+    const nP=parseInt(document.getElementById('f-nparc').value)||2;
+    const dia=parseInt(document.getElementById('f-diaparc').value)||10;
+    const vP=Math.floor((valor/nP)*100)/100;
+    const grupo=uid();
+    for(let i=0;i<nP;i++){
+      const r=avancarMes(ref,i);const[a,m]=r.split('-').map(Number);
+      const dv=gerarDataVenc(a,m-1,dia);const v=i===nP-1?Math.round((valor-vP*(nP-1))*100)/100:vP;
+      contas.push({id:uid(),descricao:desc,valor:v,valorTotal:valor,vencimento:dv,referencia:r,categoria:cat,obs,tipo:tipoModal,pago:false,grupoParcela:grupo,numParcela:i+1,totalParcelas:nP,subgrupo:sgId||undefined,criadoEm:new Date().toISOString()});
+    }
+  }else{
+    contas.push({id:uid(),descricao:desc,valor,vencimento:venc,referencia:ref,categoria:cat,obs,tipo:tipoModal,pago:false,subgrupo:sgId||undefined,criadoEm:new Date().toISOString()});
+  }
+  save();fecharModal();renderTudo();
+}
+
+// ===== BAIXA =====
+function abrirBaixa(id){
+  const c=contas.find(x=>x.id===id);if(!c)return;baixandoId=id;
+  const sg=c.subgrupo?subgrupos.find(x=>x.id===c.subgrupo):null;
+  document.getElementById('baixa-titulo').textContent=c.tipo==='receber'?'✅ Registrar Recebimento':'✅ Dar Baixa';
+  document.getElementById('baixa-info').innerHTML=`
+    <div class="row"><span>Descrição</span><strong>${esc(c.descricao)}</strong></div>
+    ${sg?`<div class="row"><span>Subgrupo</span><strong>👥 ${esc(sg.nome)}</strong></div>`:''}
+    ${c.grupoParcela?`<div class="row"><span>Parcela</span><strong>${c.numParcela}/${c.totalParcelas}</strong></div>`:''}
+    <div class="row"><span>Valor</span><strong>${fmt(c.valor)}</strong></div>
+    <div class="row"><span>Vencimento</span><strong>${c.vencimento?new Date(c.vencimento+'T12:00').toLocaleDateString('pt-BR'):'—'}</strong></div>
+  `;
+  document.getElementById('baixa-data').value=hoje();
+  document.getElementById('baixa-valor').value=c.valor.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('baixa-obs').value='';
+  document.getElementById('modal-baixa').classList.remove('hidden');
+}
+function fecharBaixa(){document.getElementById('modal-baixa').classList.add('hidden')}
+function confirmarBaixa(){
+  const idx=contas.findIndex(c=>c.id===baixandoId);if(idx<0)return;
+  const dataP=document.getElementById('baixa-data').value;
+  if(!dataP){alert('Informe a data.');return}
+  contas[idx].pago=true;contas[idx].dataPagamento=dataP;contas[idx].valorPago=parseMoeda(document.getElementById('baixa-valor').value);
+  const obs=document.getElementById('baixa-obs').value.trim();if(obs)contas[idx].obsPagamento=obs;
+  save();fecharBaixa();renderTudo();
+}
+function estornar(id){
+  if(!confirm('Desfazer o pagamento?'))return;
+  const idx=contas.findIndex(c=>c.id===id);if(idx<0)return;
+  contas[idx].pago=false;delete contas[idx].dataPagamento;delete contas[idx].valorPago;delete contas[idx].obsPagamento;
+  save();renderTudo();
+}
+function excluirConta(id){
+  const c=contas.find(x=>x.id===id);if(!c)return;
+  if(c.grupoParcela){
+    const todas=contas.filter(x=>x.grupoParcela===c.grupoParcela);
+    if(!confirm(`Parcela ${c.numParcela}/${c.totalParcelas}.\nExcluir TODAS as ${todas.length} parcelas?\nOK = Todas | Cancelar = Apenas esta`)){
+      contas=contas.filter(x=>x.id!==id);
+    }else{
+      if(confirm('Confirmar exclusão de todas?'))contas=contas.filter(x=>x.grupoParcela!==c.grupoParcela);
+      else return;
+    }
+  }else{
+    if(!confirm('Excluir esta conta?'))return;
+    contas=contas.filter(x=>x.id!==id);
+  }
+  save();renderTudo();
+}
+
+// ===== SUBGRUPOS GERENCIAR =====
+function abrirModalGrupos(){renderListaSGs();document.getElementById('modal-grupos').classList.remove('hidden')}
+function fecharGrupos(){document.getElementById('modal-grupos').classList.add('hidden')}
+function renderListaSGs(){
+  document.getElementById('lista-sgs').innerHTML=subgrupos.map((s,i)=>{
+    const qtd=contas.filter(c=>c.subgrupo===s.id).length;
+    return `<div class="grupo-manage-item">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="ava">${esc(iniciais(s.nome))}</div>
+        <div>
+          <div style="font-weight:600">${esc(s.nome)}</div>
+          <div style="font-size:.75rem;color:var(--texto-sec)">${qtd} conta(s) vinculada(s)</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-outline btn-sm" onclick="renomearSG('${s.id}')">✏</button>
+        <button class="btn btn-outline btn-sm" style="color:var(--vermelho)" onclick="removerSG('${s.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('')||'<div style="text-align:center;padding:20px;color:var(--texto-sec)">Nenhum subgrupo cadastrado</div>';
+}
+function addSG(){
+  const nome=document.getElementById('novo-sg').value.trim();if(!nome)return;
+  if(subgrupos.find(s=>s.nome.toLowerCase()===nome.toLowerCase())){alert('Já existe.');return}
+  subgrupos.push({id:uid(),nome,criadoEm:new Date().toISOString()});
+  document.getElementById('novo-sg').value='';save();renderListaSGs();
+}
+function renomearSG(id){
+  const s=subgrupos.find(x=>x.id===id);if(!s)return;
+  const novo=prompt('Novo nome:',s.nome);if(!novo||!novo.trim())return;
+  s.nome=novo.trim();save();renderListaSGs();renderTudo();
+}
+function removerSG(id){
+  const s=subgrupos.find(x=>x.id===id);if(!s)return;
+  const qtd=contas.filter(c=>c.subgrupo===id).length;
+  if(!confirm(`Remover "${s.nome}"? ${qtd>0?`\nATENÇÃO: ${qtd} conta(s) perderão o vínculo com este subgrupo.`:''}`))return;
+  subgrupos=subgrupos.filter(x=>x.id!==id);
+  contas.forEach(c=>{if(c.subgrupo===id)delete c.subgrupo});
+  save();renderListaSGs();renderTudo();
+}
+
+// ===== CATEGORIAS =====
+function abrirModalCategorias(){renderListaCats();document.getElementById('modal-cats').classList.remove('hidden')}
+function fecharCats(){document.getElementById('modal-cats').classList.add('hidden')}
+function renderListaCats(){
+  document.getElementById('lista-cats').innerHTML=categorias.map((c,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--borda);border-radius:8px;margin-bottom:7px;background:var(--cinza-claro)">
+      <span style="font-weight:600">${esc(c)}</span>
+      <button class="btn btn-outline btn-sm" style="color:var(--vermelho)" onclick="removerCat(${i})">🗑</button>
+    </div>`).join('')||'<div style="text-align:center;padding:20px;color:var(--texto-sec)">Nenhuma categoria</div>';
+}
+function addCat(){
+  const nome=document.getElementById('nova-cat').value.trim();if(!nome)return;
+  if(categorias.includes(nome)){alert('Já existe.');return}
+  categorias.push(nome);document.getElementById('nova-cat').value='';save();renderListaCats();
+}
+function removerCat(i){if(!confirm(`Remover "${categorias[i]}"?`))return;categorias.splice(i,1);save();renderListaCats()}
+
+// ===== RENDER =====
+function renderTudo(){
+  document.getElementById('mes-atual-label').textContent=labelMes(anoAtual,mesAtual);
+  renderResumo();renderAlerta();renderTabela();
+}
+
+load();renderTudo();
+</script>
+</body>
+</html>
